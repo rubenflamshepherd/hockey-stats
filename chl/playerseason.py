@@ -271,8 +271,29 @@ def _season_exists(db_cursor, season_year, season_type):
         return True
 
 
-def save_player_seasons(start_year, end_year):
-    """Visit nhl.com, grab player season statistics from start_year to end_year, and save them in a database
+def _get_seasons_attr(url, driver):
+    '''List of tuples where the first element of each tuple if the name of the season, and the second is the url
+    fragment required to visit that seasons stat page.
+
+    :param url: string
+    :param driver: WebDriver
+    :return: [(str, str)}
+    '''
+    seasons_attr = []
+    url_complete = url + '/stats/players/'
+    driver.get(url_complete)
+    season_types_menu = driver.find_element_by_class_name('full-scores__dropdown--season-select')
+    season_types_raw = season_types_menu.find_elements_by_class_name('filter-group__dropdown-option')
+    for item in season_types_raw:
+        url_frag_raw = item.get_attribute('data-reactid')
+        url_frag = url_frag_raw.split('$')[1]
+        season_name = item.text
+        seasons_attr.append((season_name, url_frag))
+    return seasons_attr
+
+
+def save_player_seasons(chl_url):
+    """Visit chl.com, grab player season statistics from every season, and save them in a database
 
     :param start_year:
     :param end_year:
@@ -285,14 +306,19 @@ def save_player_seasons(start_year, end_year):
     start_time = time.time()
     season_counter = 0
 
-    year_list = _create_seasons_list(start_year, end_year)
+    seasons_attr = _get_seasons_attr(chl_url, driver)
+    print(seasons_attr)
+    '''
+
+
+
     for year in year_list:
         if not _season_exists(c, year, '2'):
             temp_reg_seasons = _grab_player_seasons(year, '2', driver)
             _save_single_player_seasons(c, temp_reg_seasons)
             season_counter += 1
             conn.commit()
-
+    '''
     driver.close()
 
     total_time = time.time() - start_time
@@ -330,8 +356,8 @@ def _save_single_player_seasons(c, player_seasons):
 
 
 if __name__ == "__main__":
-    _create_player_seasons_table()
-    # save_player_seasons(1917, 2016)
+    #_create_player_seasons_table()
+    save_player_seasons('http://ontariohockeyleague.com')
 
 
 
