@@ -11,12 +11,13 @@ class PlayerSeason:
     """
 
     def __init__(
-            self, id_, name, year, season_type, team, pos, gp, goals, assists,
-            points, plus_minus, pim, ppg, ppa, shg, sha,
+            self, id_, num, name, year, season_type, team, pos, gp, goals, assists,
+            points, plus_minus, pim, ppg, ppa, shg, sha, s,
             gwg, otg, first_g, insurance_g,
             sho_gp, sho_g, sho_att, sho_wg, sho_per,
             fo_att, fow, fow_per, p_g, pim_g):
         self.id = id_
+        self.num = num
         self.name = name
         self.year = year
         self.type = season_type  # now a str because many types exist between ohl, whl, qmjhl
@@ -32,6 +33,7 @@ class PlayerSeason:
         self.ppa = ppa
         self.shg = shg
         self.sha = sha
+        self.s = s
         self.gwg = gwg
         self.otg = otg
         self.first_g = first_g
@@ -65,85 +67,123 @@ def _parse_player(season_year, season_type, stats_list):
     :param stats_list: [WebDriver]
     :return: PlayerSeason
     """
-    name = stats_list[1].text
-    id_ = _parse_id(stats_list[1])
-    team = stats_list[3].text
-    pos = stats_list[4].text
+    pos = stats_list[1].text
+    num = stats_list[2].text
+    if stats_list[3].text == '*':
+        rookie = True
+    else:
+        rookie = False
+    name_raw = stats_list[4].text.split(',')
+    name = name_raw[1] + " " + name_raw[0]
+    id_ = _parse_id(stats_list[4])
+    team = stats_list[5].text
+
     try:
-        gp = int(stats_list[5].text)
+        gp = int(stats_list[6].text)
     except ValueError:
         gp = None
     try:
-        goals = int(stats_list[6].text)
+        goals = int(stats_list[7].text)
     except ValueError:
         goals = None
     try:
-        assists = int(stats_list[7].text)
+        assists = int(stats_list[8].text)
     except ValueError:
         assists = None
     try:
-        points = int(stats_list[8].text)
+        points = int(stats_list[9].text)
     except ValueError:
         points = None
     try:
-        plus_minus = int(stats_list[9].text)
+        plus_minus = int(stats_list[10].text)
     except ValueError:
         plus_minus = None
     try:
-        pim = int(stats_list[10].text)
+        pim = int(stats_list[11].text)
     except ValueError:
         pim = None
-    try:
-        p_gp = float(stats_list[11].text)
-    except ValueError:
-        p_gp = None
     try:
         ppg = int(stats_list[12].text)
     except ValueError:
         ppg = None
     try:
-        ppp = int(stats_list[13].text)
+        ppa = int(stats_list[13].text)
     except ValueError:
-        ppp = None
+        ppa = None
     try:
         shg = int(stats_list[14].text)
     except ValueError:
         shg = None
     try:
-        shp = int(stats_list[15].text)
+        sha = int(stats_list[15].text)
     except ValueError:
-        shp = None
+        sha = None
     try:
-        gwg = int(stats_list[16].text)
-    except ValueError:
-        gwg = None
-    try:
-        otg = int(stats_list[17].text)
-    except ValueError:
-        otg = None
-    try:
-        s = int(stats_list[18].text)
+        s = int(stats_list[16].text)
     except ValueError:
         s = None
     try:
-        s_per = float(stats_list[19].text)
+        gwg = int(stats_list[17].text)
     except ValueError:
-        s_per = None
-    if stats_list[20].text == '':
-        toi_gp = None
-    else:
-        toi_gp = stats_list[20].text
+        gwg = None
     try:
-        shifts_gp = float(stats_list[21].text)
+        otg = int(stats_list[18].text)
     except ValueError:
-        shifts_gp = None
+        otg = None
     try:
-        fow_per = float(stats_list[22].text)
+        first_g = int(stats_list[19].text)
+    except ValueError:
+        first_g = None
+    try:
+        insurance_g = int(stats_list[20].text)
+    except ValueError:
+        insurance_g = None
+    try:
+        sho_gp = int(stats_list[21].text)
+    except ValueError:
+        sho_gp = None
+    try:
+        sho_g = int(stats_list[22].text)
+    except ValueError:
+        sho_g = None
+    try:
+        sho_att = int(stats_list[23].text)
+    except ValueError:
+        sho_att = None
+    try:
+        sho_wg = int(stats_list[24].text)
+    except ValueError:
+        sho_wg = None
+    try:
+        sho_per = float(stats_list[25].text)
+    except ValueError:
+        sho_per = None
+    try:
+        fo_att = int(stats_list[26].text)
+    except ValueError:
+        fo_att = None
+    try:
+        fow = int(stats_list[27].text)
+    except ValueError:
+        fow = None
+    try:
+        fow_per = float(stats_list[28].text)
     except ValueError:
         fow_per = None
+    try:
+        p_g = float(stats_list[29].text)
+    except ValueError:
+        p_g = None
+    try:
+        pim_g = float(stats_list[30].text)
+    except ValueError:
+        pim_g = None
     return PlayerSeason(
-        id_, name, season_year, season_type, team, pos, gp, goals, assists, points, plus_minus, pim, p_gp, ppg, ppp,
-        shg, shp, gwg, otg, s, s_per, toi_gp, shifts_gp, fow_per
+        id_, num, name, season_year, season_type, team, pos, gp, goals, assists,
+        points, plus_minus, pim, ppg, ppa, shg, sha, s,
+        gwg, otg, first_g, insurance_g,
+        sho_gp, sho_g, sho_att, sho_wg, sho_per,
+        fo_att, fow, fow_per, p_g, pim_g
     )
 
 
@@ -171,33 +211,13 @@ def _create_player_seasons_table():
                  (
                  id TEXT, name TEXT, year TEXT, season_type TEXT, team TEXT,
                  pos TEXT, gp INTEGER, goals INTEGER, assists INTEGER, points INTEGER, plus_minus INTEGER,
-                 pim INTEGER, ppg INTEGER, ppa INTEGER, shg INTEGER, sha INTEGER, gwg INTEGER, otg INTEGER,
+                 pim INTEGER, ppg INTEGER, ppa INTEGER, shg INTEGER, sha INTEGER, s INTEGER, gwg INTEGER, otg INTEGER,
                  first_g INTEGER, insurance_g INTEGER, sho_gp INTEGER, sho_g INTEGER, sho_att INTEGER,
                  sho_wg INTEGER, sho_per REAL, fo_att INTEGER, fow INTEGER, fow_per REAL, p_g REAL, pim_g REAL,
                  PRIMARY KEY (id, year, season_type)
                  )''')
     conn.commit()
     conn.close()
-
-
-def _create_seasons_list(start_year, end_year):
-    """Return a list of strings representing season years between start_year and end_year.
-
-    For example, if start_year = 1999 and end_year = 2000, [19992000, 20002001] returned
-
-    :param start_year: int
-    :param end_year: int
-    :return: [str]
-    """
-    curr_year = start_year
-    seasons_list = []
-
-    while curr_year <= end_year:
-        season_str = str(curr_year) + str(curr_year + 1)
-        seasons_list.append(season_str)
-        curr_year += 1
-
-    return seasons_list
 
 
 def _grab_single_page(season_year, season_type, driver):
@@ -271,6 +291,62 @@ def _season_exists(db_cursor, season_year, season_type):
         return True
 
 
+def _parse_season_yr(season_yr_raw):
+    """Given a season name, parse the year of the season and return it as YYYY-YYYY
+
+    :param season_yr_raw: str
+    :return: str
+    """
+    season_raw = season_yr_raw.split()[0]
+    if len(season_raw)==4:
+        previous_year_int = int(season_raw) - 1
+        season_yr = season_raw + "-" + str(previous_year_int)
+        return season_yr
+    elif len(season_raw)==7:
+        season_raw = season_raw.split('-')[0]
+        previous_year_int = int(season_raw) - 1
+    else:
+        assert False, "Can not parse a season year from the {}".format(season_yr_raw)
+    season_yr = str(previous_year_int) + "-" + season_raw
+    return season_yr
+
+
+def _grab_single_season(season_name, url_frag, chl_url, driver):
+    """Visit a page of a chl city representing a single season and grab and return the data
+
+    :param season_name: str
+    :param url_frag: str
+    :param chl_url: str
+    :param driver: WebDriver
+    :return: [PlayerSeason]
+    """
+    player_seasons = []
+    url_complete = chl_url + '/stats/players/' + url_frag
+    driver.get(url_complete)
+    time.sleep(1)  # Let the user actually see something!
+    # Expand view of player seasons until no more seasons are revealed
+    button_load_element = driver.find_element_by_class_name('button-load')
+    player_seasons_driver = driver.find_elements_by_class_name('table__tr')
+    prev_num_players = 0
+    curr_num_players = len(player_seasons_driver)
+    while curr_num_players != prev_num_players:
+        button_load_element.click()
+        time.sleep(1)
+        player_seasons_driver = driver.find_elements_by_class_name('table__tr')
+        prev_num_players = curr_num_players
+        curr_num_players = len(player_seasons_driver)
+        print(str(prev_num_players) + " " + str(curr_num_players))
+    player_seasons_driver = iter(player_seasons_driver)
+    next(player_seasons_driver)  # Skip header row
+    season_year = _parse_season_yr(season_name)
+    '''
+    for temp_row in player_seasons_driver:
+        temp_stats = temp_row.find_elements_by_tag_name('td')
+        temp_player_season = _parse_player(season_year, season_name, temp_stats)
+        player_seasons.append(temp_player_season)
+    '''
+
+
 def _get_seasons_attr(url, driver):
     '''List of tuples where the first element of each tuple if the name of the season, and the second is the url
     fragment required to visit that seasons stat page.
@@ -306,7 +382,9 @@ def save_player_seasons(chl_url):
     start_time = time.time()
     season_counter = 0
 
-    seasons_attr = _get_seasons_attr(chl_url, driver)
+    seasons_attr = _get_seasons_attr(chl_url, driver)  # [(season name, url frag)]
+    season_name, url_frag = seasons_attr[0]
+    season = _grab_single_season(season_name, url_frag, chl_url, driver)
     print(seasons_attr)
     '''
 
@@ -356,8 +434,11 @@ def _save_single_player_seasons(c, player_seasons):
 
 
 if __name__ == "__main__":
-    #_create_player_seasons_table()
-    save_player_seasons('http://ontariohockeyleague.com')
+    _create_player_seasons_table()
+    # save_player_seasons('http://ontariohockeyleague.com')
+    driver = webdriver.Chrome(executable_path=os.path.join(os.getcwd(), "driver\chromedriver.exe"))
+    _grab_single_season('2017 Playoffs', '58', 'http://ontariohockeyleague.com', driver)
+    driver.close()
 
 
 
