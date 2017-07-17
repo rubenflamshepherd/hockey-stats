@@ -62,7 +62,7 @@ class PlayerSeason:
                "{:<10}".format("|GP " + str(self.gp))
 
 
-def _parse_player(league, season_year, season_name, stats_list):
+def _parse_player(league, season_year, season_name, stats_list, headers_list):
     """ Return a PlayerSeason object given a list of WebDrivers (stats_list) representing of their statistics
 
     :param season_year: str
@@ -70,122 +70,161 @@ def _parse_player(league, season_year, season_name, stats_list):
     :param stats_list: [WebDriver]
     :return: PlayerSeason
     """
-    pos = stats_list[1].text
-    num = stats_list[2].text
-    active = stats_list[3].text
-    if stats_list[4].text == '*':
-        rookie = True
-    else:
-        rookie = False
-    name_raw = stats_list[5].text.split(',')
-    name = name_raw[1] + " " + name_raw[0]
-    id_ = _parse_id(stats_list[5])
-    team = stats_list[6].text
+    # Default values for statistics not present in every season
+    sho_gp, sho_g, sho_att, sho_wg, sho_per = None, None, None, None, None
+    fo_att, fow, fow_per = None, None, None
+    # Parsing individual statistics
+    for header, stat in zip(headers_list, stats_list):
+        if header.text == 'Pos':
+            pos = stat.text
+        elif header.text == '#':
+            num = stat.text
+        elif header.text == 'Inactive':
+            if stat.text == 'X':
+                active = True
+            else:
+                active = False
+        elif header.text == 'Rookie':
+            if stat.text == '*':
+                rookie = True
+            else:
+                rookie = False
+        elif header.text == 'Name':
+            name_raw = stat.text.split(',')
+            name = name_raw[1] + " " + name_raw[0]
+            id_ = _parse_id(stat)
+        elif header.text == 'Team':
+            team = stat.text
+        elif header.text == 'GP':
+            try:
+                gp = int(stat.text)
+            except ValueError:
+                gp = None
+        elif header.text == 'G':
+            try:
+                goals = int(stat.text)
+            except ValueError:
+                goals = None
+        elif header.text == 'A':
+            try:
+                assists = int(stat.text)
+            except ValueError:
+                assists = None
+        elif header.text == 'PTS':
+            try:
+                points = int(stat.text)
+            except ValueError:
+                points = None
+        elif header.text == '+/-':
+            try:
+                plus_minus = int(stat.text)
+            except ValueError:
+                plus_minus = None
+        elif header.text == 'PIM':
+            try:
+                pim = int(stat.text)
+            except ValueError:
+                pim = None
+        elif header.text == 'PPG':
+            try:
+                ppg = int(stat.text)
+            except ValueError:
+                ppg = None
+        elif header.text == 'PPA':
+            try:
+                ppa = int(stat.text)
+            except ValueError:
+                ppa = None
+        elif header.text == 'SHG':
+            try:
+                shg = int(stat.text)
+            except ValueError:
+                shg = None
+        elif header.text == 'SHA':
+            try:
+                sha = int(stat.text)
+            except ValueError:
+                sha = None
+        elif header.text == 'SOG':
+            try:
+                sog = int(stat.text)
+            except ValueError:
+                sog = None
+        elif header.text == 'GWG':
+            try:
+                gwg = int(stat.text)
+            except ValueError:
+                gwg = None
+        elif header.text == 'OTG':
+            try:
+                otg = int(stat.text)
+            except ValueError:
+                otg = None
+        elif header.text == 'First':
+            try:
+                first_g = int(stat.text)
+            except ValueError:
+                first_g = None
+        elif header.text == 'Insurance':
+            try:
+                insurance = int(stat.text)
+            except ValueError:
+                insurance = None
+        elif header.text == 'SOGP':
+            try:
+                sho_gp = int(stat.text)
+            except ValueError:
+                sho_gp = None
+        elif header.text == 'SO-G':
+            try:
+                sho_g = int(stat.text)
+            except ValueError:
+                sho_g = None
+        elif header.text == 'ATT':
+            try:
+                sho_att = int(stat.text)
+            except ValueError:
+                sho_att = None
+        elif header.text == 'SOWG':
+            try:
+                sho_wg = int(stat.text)
+            except ValueError:
+                sho_wg = None
+        elif header.text == 'SO%':
+            try:
+                sho_per = int(stat.text)
+            except ValueError:
+                sho_per = None
+        elif header.text == 'FOA':
+            try:
+                fo_att = int(stat.text)
+            except ValueError:
+                fo_att = None
+        elif header.text == 'FOW':
+            try:
+                fow = int(stat.text)
+            except ValueError:
+                fow = None
+        elif header.text == 'FO%':
+            try:
+                fow_per = int(stat.text)
+            except ValueError:
+                fow_per = None
+        elif header.text == 'PTS/G':
+            try:
+                p_g = int(stat.text)
+            except ValueError:
+                p_g = None
+        elif header.text == 'PIM/G':
+            try:
+                pim_g = int(stat.text)
+            except ValueError:
+                pim_g = None
 
-    try:
-        gp = int(stats_list[7].text)
-    except ValueError:
-        gp = None
-    try:
-        goals = int(stats_list[8].text)
-    except ValueError:
-        goals = None
-    try:
-        assists = int(stats_list[9].text)
-    except ValueError:
-        assists = None
-    try:
-        points = int(stats_list[10].text)
-    except ValueError:
-        points = None
-    try:
-        plus_minus = int(stats_list[11].text)
-    except ValueError:
-        plus_minus = None
-    try:
-        pim = int(stats_list[12].text)
-    except ValueError:
-        pim = None
-    try:
-        ppg = int(stats_list[13].text)
-    except ValueError:
-        ppg = None
-    try:
-        ppa = int(stats_list[14].text)
-    except ValueError:
-        ppa = None
-    try:
-        shg = int(stats_list[15].text)
-    except ValueError:
-        shg = None
-    try:
-        sha = int(stats_list[16].text)
-    except ValueError:
-        sha = None
-    try:
-        s = int(stats_list[17].text)
-    except ValueError:
-        s = None
-    try:
-        gwg = int(stats_list[18].text)
-    except ValueError:
-        gwg = None
-    try:
-        otg = int(stats_list[19].text)
-    except ValueError:
-        otg = None
-    try:
-        first_g = int(stats_list[20].text)
-    except ValueError:
-        first_g = None
-    try:
-        insurance_g = int(stats_list[21].text)
-    except ValueError:
-        insurance_g = None
-    try:
-        sho_gp = int(stats_list[22].text)
-    except ValueError:
-        sho_gp = None
-    try:
-        sho_g = int(stats_list[23].text)
-    except ValueError:
-        sho_g = None
-    try:
-        sho_att = int(stats_list[24].text)
-    except ValueError:
-        sho_att = None
-    try:
-        sho_wg = int(stats_list[25].text)
-    except ValueError:
-        sho_wg = None
-    try:
-        sho_per = float(stats_list[26].text)
-    except ValueError:
-        sho_per = None
-    try:
-        fo_att = int(stats_list[27].text)
-    except ValueError:
-        fo_att = None
-    try:
-        fow = int(stats_list[28].text)
-    except ValueError:
-        fow = None
-    try:
-        fow_per = float(stats_list[29].text)
-    except ValueError:
-        fow_per = None
-    try:
-        p_g = float(stats_list[30].text)
-    except ValueError:
-        p_g = None
-    try:
-        pim_g = float(stats_list[31].text)
-    except ValueError:
-        pim_g = None
     return PlayerSeason(
         league, id_, num, active, rookie, name, season_year, season_name, team, pos, gp, goals, assists,
-        points, plus_minus, pim, ppg, ppa, shg, sha, s,
-        gwg, otg, first_g, insurance_g,
+        points, plus_minus, pim, ppg, ppa, shg, sha, sog,
+        gwg, otg, first_g, insurance,
         sho_gp, sho_g, sho_att, sho_wg, sho_per,
         fo_att, fow, fow_per, p_g, pim_g
     )
@@ -213,7 +252,7 @@ def _create_player_seasons_table():
     c.execute('DROP TABLE IF EXISTS chl_player_seasons')
     c.execute('''CREATE TABLE chl_player_seasons
                  (
-                 league TEXT, id TEXT, num INTEGER, active TEXT, rookie BOOLEAN, name TEXT, year TEXT, season_name TEXT, team TEXT,
+                 league TEXT, id TEXT, num INTEGER, active BOOLEAN, rookie BOOLEAN, name TEXT, year TEXT, season_name TEXT, team TEXT,
                  pos TEXT, gp INTEGER, goals INTEGER, assists INTEGER, points INTEGER, plus_minus INTEGER,
                  pim INTEGER, ppg INTEGER, ppa INTEGER, shg INTEGER, sha INTEGER, s INTEGER, gwg INTEGER, otg INTEGER,
                  first_g INTEGER, insurance_g INTEGER, sho_gp INTEGER, sho_g INTEGER, sho_att INTEGER,
@@ -222,59 +261,6 @@ def _create_player_seasons_table():
                  )''')
     conn.commit()
     conn.close()
-
-
-def _grab_single_page(league, season_year, season_type, driver):
-    """Given a WebDriver <driver> that points to a nhl.com url with season statistics for players, parse and return a
-      list of PlayerSeason objects representing the data on the single page.
-
-    :param season_year: str
-    :param season_type: str
-    :param driver: WebDriver
-    :return: [PlayerSeason}
-    """
-    player_seasons = []
-    time.sleep(1)  # Let the user actually see something!
-    test_element = driver.find_elements_by_class_name('standard-row')
-    for temp_player in test_element:
-        temp_stats = temp_player.find_elements_by_tag_name('td')
-        temp_player_season = _parse_player(league, season_year, season_type, temp_stats)
-        player_seasons.append(temp_player_season)
-    return player_seasons
-
-
-def _grab_player_seasons(season_year, season_type, driver):
-    """ Given a WebDriver <driver>, point the driver to a nhl.com url with season statistics for players in
-    year <season_year> and of <season_type> and navigate the driver to all possible pages and return the list of
-     PlayerSeason objects representing the data from that season.
-
-    :param season_year: str
-    :param season_type: str
-    :param driver: WebDriver
-    :return: [PlayerSeason}
-    """
-    url_frag1 = "http://www.nhl.com/stats/player?aggregate=0&gameType="
-    url_frag2 = "&report=skatersummary&pos=S&reportType=season&seasonFrom="
-    url_frag3 = "&seasonTo="
-    url_frag4 = "&filter=gamesPlayed,gte,1&sort=points,goals,gamesPlayed"
-    url_complete = url_frag1 + season_type + url_frag2 + season_year + url_frag3 + season_year + url_frag4
-
-    driver.get(url_complete)
-    player_seasons = []
-    curr_page = 1
-
-    try:
-        page_select_element = driver.find_element_by_class_name('pager-select')
-        page_nums = page_select_element.text.split('\n')
-        last_page = int(page_nums[-1])
-        while curr_page <= last_page:
-            player_seasons += _grab_single_page(season_year, season_type, driver)
-            page_select_element.send_keys(Keys.ARROW_DOWN)
-            curr_page += 1
-    except selenium.common.exceptions.NoSuchElementException:  # Only 1 page of stats available
-        player_seasons += _grab_single_page(season_year, season_type, driver)
-
-    return player_seasons
 
 
 def _season_exists(db_cursor, season_name):
@@ -286,12 +272,12 @@ def _season_exists(db_cursor, season_name):
     :return: bool
     """
     checker = db_cursor.execute(
-        'SELECT * FROM chl_player_seasons WHERE season_type=?',
-        (season_year, season_type))
+        'SELECT * FROM chl_player_seasons WHERE season_name=?',
+        (season_name,))
     if len(checker.fetchmany()) == 0:
         return False
     else:  # len(checker) >= 1
-        print(season_year + " season, type " + season_type + " already saved!")
+        print(season_name + " already saved!")
         return True
 
 
@@ -325,7 +311,7 @@ def _grab_single_season(league, season_name, url_frag, chl_url, driver):
     player_seasons = []
     url_complete = chl_url + '/stats/players/' + url_frag
     driver.get(url_complete)
-    time.sleep(1)  # Let the user actually see something!
+    time.sleep(5)  # Let the user actually see something!
     # Expand view of player seasons until no more seasons are revealed
     button_load_element = driver.find_element_by_class_name('button-load')
     player_seasons_driver = driver.find_elements_by_class_name('table__tr')
@@ -333,17 +319,17 @@ def _grab_single_season(league, season_name, url_frag, chl_url, driver):
     curr_num_players = len(player_seasons_driver)
     while curr_num_players != prev_num_players:
         button_load_element.click()
-        time.sleep(2)
+        time.sleep(5)
         player_seasons_driver = driver.find_elements_by_class_name('table__tr')
         prev_num_players = curr_num_players
         curr_num_players = len(player_seasons_driver)
     player_seasons_driver = iter(player_seasons_driver)
-    next(player_seasons_driver)  # Skip header row
+    headers_list = next(player_seasons_driver)  # Skip header row
     season_year = _parse_season_yr(season_name)
     # Parse player statistics and save create PlayerSeason objects
     for temp_row in player_seasons_driver:
         temp_stats = temp_row.find_elements_by_tag_name('td')
-        temp_player_season = _parse_player(league, season_year, season_name, temp_stats)
+        temp_player_season = _parse_player(league, season_year, season_name, temp_stats, headers_list)
         player_seasons.append(temp_player_season)
         print(temp_player_season)
     return player_seasons
@@ -427,22 +413,13 @@ def _save_player_seasons(c, player_seasons):
         c.execute(
             'INSERT INTO chl_player_seasons VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
             temp_player)
-    print(player_season.season_name + " saved")
+    try:
+        print(player_season.season_name + " saved")
+    except UnboundLocalError:
+        print('empty season visited')
+
 
 
 if __name__ == "__main__":
-    # save_league_seasons("OHL", 'http://ontariohockeyleague.com')
-
-    _create_player_seasons_table()
-
-    driver = webdriver.Chrome(executable_path=os.path.join(os.getcwd(), "driver\chromedriver.exe"))
-    temp_single_season = _grab_single_season('OHL', '2017 Playoffs', '58', 'http://ontariohockeyleague.com', driver)
-    pickle.dump(temp_single_season, open("save.p", "wb"))
-    driver.close()
-    conn = sqlite3.connect('hockey-stats.db')
-    c = conn.cursor()
-    temp_single_season = pickle.load(open("save.p", "rb"))
-    _save_player_seasons(c, temp_single_season)
-    conn.commit()
-    conn.close()
-    
+    # _create_player_seasons_table()
+    save_league_seasons('OHL', 'http://ontariohockeyleague.com')
