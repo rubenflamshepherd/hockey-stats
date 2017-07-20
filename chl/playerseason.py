@@ -192,7 +192,7 @@ def _parse_player(league, season_year, season_name, stats_list, headers_list):
                 sho_wg = None
         elif header.text == 'SO%':
             try:
-                sho_per = int(stat.text)
+                sho_per = float(stat.text)
             except ValueError:
                 sho_per = None
         elif header.text == 'FOA':
@@ -207,19 +207,21 @@ def _parse_player(league, season_year, season_name, stats_list, headers_list):
                 fow = None
         elif header.text == 'FO%':
             try:
-                fow_per = int(stat.text)
+                fow_per = float(stat.text)
             except ValueError:
                 fow_per = None
         elif header.text == 'PTS/G':
             try:
-                p_g = int(stat.text)
+                p_g = float(stat.text)
             except ValueError:
                 p_g = None
         elif header.text == 'PIM/G':
             try:
-                pim_g = int(stat.text)
+                pim_g = float(stat.text)
             except ValueError:
                 pim_g = None
+        else:
+            assert False, '{} is not a recognized stat category'.format(header)
 
     return PlayerSeason(
         league, id_, num, active, rookie, name, season_year, season_name, team, pos, gp, goals, assists,
@@ -324,7 +326,8 @@ def _grab_single_season(league, season_name, url_frag, chl_url, driver):
         prev_num_players = curr_num_players
         curr_num_players = len(player_seasons_driver)
     player_seasons_driver = iter(player_seasons_driver)
-    headers_list = next(player_seasons_driver)  # Skip header row
+    headers_list_raw = next(player_seasons_driver)  # Store headers row
+    headers_list = headers_list_raw.find_elements_by_tag_name('th')
     season_year = _parse_season_yr(season_name)
     # Parse player statistics and save create PlayerSeason objects
     for temp_row in player_seasons_driver:
@@ -423,3 +426,6 @@ def _save_player_seasons(c, player_seasons):
 if __name__ == "__main__":
     # _create_player_seasons_table()
     save_league_seasons('OHL', 'http://ontariohockeyleague.com')
+
+    # driver = webdriver.Chrome(executable_path=os.path.join(os.getcwd(), "driver\chromedriver.exe"))
+    # temp_single_season = _grab_single_season('OHL', '2005 Playoffs', '25', 'http://ontariohockeyleague.com', driver)
