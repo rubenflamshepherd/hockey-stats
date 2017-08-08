@@ -124,19 +124,14 @@ def _player_exists(db_cursor, player_id):
         return True
 
 
-def _ft_to_cm(item):
-    feet_index = item.find("'")
-    feet = int(item[feet_index-1])
-    inches_index = item.find('"')
-    inches = int(item[inches_index - 1])
-    total_inches = feet * 12 + inches
+def _ft_to_cm(ft, inches):
+    total_inches = ft * 12 + inches
     total_cm = total_inches * 2.54
     return total_cm
 
 
 def _parse_birthdate(birth_str_raw):
-    birth_str_raw = birth_str_raw.split(':')
-    birth_str_raw = birth_str_raw[1].strip()
+    birth_str_raw = birth_str_raw.strip()
     birth_str = birth_str_raw.split('-')
     year = int(birth_str[0])
     month = int(birth_str[1])
@@ -146,8 +141,7 @@ def _parse_birthdate(birth_str_raw):
 
 def _parse_birthplace(birthplace_str):
     state, country = None, None  # Default values
-    birthplace_str = birthplace_str.split(':')
-    birthplace_str = birthplace_str[1].strip()
+    birthplace_str = birthplace_str.strip()
     city, territory = birthplace_str.split(', ')
     if territory.isupper():
         state = territory
@@ -169,11 +163,10 @@ def _parse_height(height_raw):
     :param height_raw: str
     :return: str
     """
-    height_raw = height_raw.split(': ')
-    height_raw = height_raw[1]
-    feet, inches_raw = height_raw.split('.')
-    inches = str(int(inches_raw)/100 * 12)
-    return feet + "'" + inches
+    feet_raw, inches_raw = height_raw.split('.')
+    feet = int(feet_raw.strip())
+    inches = int(inches_raw.strip())
+    return feet, inches
 
 
 def _parse_draft(draft_str, league=None):
@@ -181,19 +174,12 @@ def _parse_draft(draft_str, league=None):
     team = draft_list[2]
     year = draft_list[3].strip('(').strip(')')
     draft_round = draft_list[-2]
-    overall = _parse_nums()draft_list[-1]
+    overall = _parse_nums(draft_list[-1])
     if league == None:
         return NHL_Draft(year, team, draft_round, overall)
     else:
         return CHL_Draft(year, league, team, draft_round, overall)
 
-def _parse_chl_draft(draft_str, league):
-    draft_list = draft_str.split()
-    team = draft_list[2]
-    year = draft_list[3].strip('(').strip(')')
-    draft_round = draft_list[-2]
-    overall = _parse_nums()draft_list[-1]
-    return NHL_Draft(year, team, draft_round, overall)
 
 def _parse_primary_element(primary_element):
     """
@@ -212,22 +198,23 @@ def _parse_secondary_element(secondary_element, league):
     :param secondary_elements:
     :return: float, float, datetime, BirthPlace, str,
     """
-    nhl_draft, chl_draft = NHL_Draft(None, None, None), CHL_Draft(None, None, None, None) #  Default values
+    nhl_draft, chl_draft = NHL_Draft(None, None, None, None), CHL_Draft(None, None, None, None, None) #  Default values
     elements_raw = secondary_element.find_elements_by_class_name('player-profile-info')
     for item_raw in elements_raw:
-        header, stat = item_raw.split(':')
-        if 'Shoots:' in header:
-            shoots_raw = stat.split(':')
-            shoots = shoots_raw[1].strip()
-        elif 'Height:' in header:
-            height_raw = _parse_height(stat)
-            height = _ft_to_cm(height_raw)
-        elif 'Weight:' in header:
+        contents = item_raw.text.split(':')
+        header, stat = contents[0], contents[1]
+        print(header)
+        if 'Shoots' in header:
+            shoots = stat.strip()
+        elif 'Height' in header:
+            feet, inches = _parse_height(stat)
+            height = _ft_to_cm(feet, inches)
+        elif 'Weight' in header:
             weight_raw = stat.split(':')
             weight = int(stat[1].strip()) * 0.453592
-        elif 'Birthdate:' in header:
+        elif 'Birthdate' in header:
             birthdate = _parse_birthdate(stat)
-        elif 'Hometown:' in header:
+        elif 'Hometown' in header:
             birthplace = _parse_birthplace(stat)
         elif 'NHL - ' in header:
             if nhl_draft.year == None:
@@ -239,10 +226,11 @@ def _parse_secondary_element(secondary_element, league):
                 chl_draft = _parse_draft(stat, league)
             else:
                 assert False, "player with birthdate {} has more than 1 chl draft".format(birthdate)
+    return height, weight, birthdate, birthplace, shoots, nhl_draft, chl_draft
 
 
 
-def _parse_player_page(url_prefix, id_, driver):
+def _parse_player_page(league, url_prefix, id_, driver):
     """ Given a WebDriver <driver>, point the driver to a player page at url_prefix with <id_> and return the
      PlayerPage object.
 
@@ -258,9 +246,10 @@ def _parse_player_page(url_prefix, id_, driver):
     secondary_element = driver.find_element_by_class_name('player-profile-secondary')
 
     name, num, pos = _parse_primary_element(primary_element)
-    height, weight, birth_date, birthplace, shoots, draft = _parse_secondary_element(secondary_element)
+    height, weight, birthdate, birthplace, shoots, nhl_draft, chl_draft =\
+        _parse_secondary_element(secondary_element, league)
 
-    return PlayerPage(id_, name, num, pos, height, weight, birth_date, birthplace, shoots, draft)
+    return PlayerPage(id_, league, name, num, pos, height, weight, birthdate, birthplace, shoots, nhl_draft, chl_draft)
 
 
 def save_player_pages(cap):
@@ -315,6 +304,6 @@ if __name__ == '__main__':
     #_create_player_pages_table()
     #save_player_pages(2479)
     driver = webdriver.Chrome(executable_path=os.path.join(os.getcwd(), "driver\chromedriver.exe"))
-    temp_player = _parse_player_page('http://ontariohockeyleague.com', '1906', driver)
+    temp_player = _parse_player_page('OHL', 'http://ontariohockeyleague.com', '1906', driver)
     driver.close()
 
